@@ -6,7 +6,7 @@ var _ = require('underscore')
 var Movie = require('./models/movie')
 var app = express()
 var session = require('express-session')
-var bodyParser = require('body-parser');
+var bodyParser = require('body-parser')
 
 
 mongoose.connect('mongodb://localhost/nova')
@@ -15,11 +15,27 @@ app.set('views', './views/pages')
 app.set('view engine','jade')
 app.use(session({secret: 'keyboard cat'}))
 app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({ extended: false }))
 app.use(express.static(path.join(__dirname, 'bower_components')))
 app.locals.moment = require('moment')
 app.listen(port)
 
 console.log('novamovie started on port' + port)
+
+app.use(function(req, res, next){
+	var reqData = [];
+	var size = 0;
+	req.on('data', function (data) {
+		console.log('>>>req on');
+		console.log(data.toString());
+		reqData.push(data);
+		size += data.length;
+	});
+	req.on('end', function () {
+		req.reqData = Buffer.concat(reqData, size);
+	});
+	next();
+});
 
 // index page
 app.get('/', function(req,res){
@@ -82,14 +98,13 @@ app.get('/tool/movie_save', function(req,res){
 
 // admin post movie
 app.post('/admin/movie/new',function(req,res){
-	console.log(req.query);
 	console.log(req.body);
 	var id = req.body.movie._id
 	var movieObj = req.body.movie
 
 	var _movie
 
-	if(id !=='undefined'){
+	if(id !== 'undefined'){
 		Movie.findById(id,function(err,movie){
 			if(err){
 				console.log(err)
@@ -120,7 +135,7 @@ app.post('/admin/movie/new',function(req,res){
 				console.log(err)
 			}
 
-			res.redirect('/movie/'+movie._id)
+			res.redirect('/movie/'+_movie._id)
 		})
 	}
 })
